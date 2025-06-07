@@ -1,0 +1,63 @@
+const express = require("express");
+const http = require("http");
+const cors = require("cors");
+const { Server } = require("socket.io");
+const authRoutes = require("./src/routes/auth");
+
+const app = express();
+const server = http.createServer(app);
+
+// CORS setup
+app.use(cors({
+  origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+  credentials: true
+}));
+
+// Initialize Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+    methods: ["GET", "POST"]
+  }
+});
+const usersInRoom = {}; // { roomId: [{ id, username }] }
+
+io.on("connection", socket => {
+  socket.on("join-room", ({ roomId, username }) => {
+    if (!usersInRoom[roomId]) usersInRoom[roomId] = [];
+    usersInRoom[roomId].push({ id: socket.id, username });
+
+    const otherUsers = usersInRoom[roomId].filter(u => u.id !== socket.id);
+    socket.emit("all-users", otherUsers);
+
+    socket.on("sending-signal", payload => {
+      io.to(payload.userToSignal).emit("user-joined", {
+        signal: payload.signal,
+        callerID: payload.callerID,
+        username,
+      });
+    });
+
+    socket.on("returning-signal", payload => {
+      io.to(payload.callerID).emit("receiving-returned-signal", {
+        signal: payload.signal,
+        id: socket.id,
+        username,
+      });
+    });
+
+    socket.on("disconnect", () => {
+      if (usersInRoom[roomId]) {
+        usersInRoom[roomId] = usersInRoom[roomId].filter(u => u.id !== socket.id);
+        socket.to(roomId).emit("user-left", socket.id);
+        if (usersInRoom[roomId].length === 0) delete usersInRoom[roomId];
+      }
+    });
+  });
+});
+
+
+const PORT = process.env.PORT || 5011;
+server.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
