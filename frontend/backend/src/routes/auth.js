@@ -32,6 +32,9 @@ router.post("/login", (req, res) => {
 
 // Protected route example
 router.get("/me", (req, res) => {
+  res.send("Auth route working!");
+
+
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ message: "No token" });
   const token = authHeader.split(" ")[1];

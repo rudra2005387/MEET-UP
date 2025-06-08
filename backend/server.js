@@ -2,12 +2,12 @@ const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
-const authRoutes = require("./src/routes/auth");
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const server = http.createServer(app);
 
-// CORS setup
+app.use("/api/auth", authRoutes);
 app.use(cors({
   origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
   credentials: true
