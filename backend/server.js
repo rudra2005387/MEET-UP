@@ -7,19 +7,29 @@ const authRoutes = require('./routes/auth');
 const app = express();
 const server = http.createServer(app);
 
-app.use("/api/auth", authRoutes);
+// --- CORS and JSON middleware ---
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+  origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002",    "https://your-frontend.onrender.com" ],
   credentials: true
 }));
+app.use(express.json());
 
-// Initialize Socket.IO
+// --- Health check route for Render ---
+app.get("/", (req, res) => {
+  res.status(200).send("Server is healthy!");
+});
+
+// --- Auth routes ---
+app.use("/api/auth", authRoutes);
+
+// --- Socket.IO setup ---
 const io = new Server(server, {
   cors: {
     origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
     methods: ["GET", "POST"]
   }
 });
+
 const usersInRoom = {}; // { roomId: [{ id, username }] }
 
 io.on("connection", socket => {
@@ -55,7 +65,6 @@ io.on("connection", socket => {
     });
   });
 });
-
 
 const PORT = process.env.PORT || 5011;
 server.listen(PORT, () => {
