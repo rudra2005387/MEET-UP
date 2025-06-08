@@ -1,5 +1,6 @@
-const { Sequelize, DataTypes } = require('sequelize');
-const User = require('../models/user');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../models'); // Adjust path if your sequelize instance is elsewhere
+
 const User = sequelize.define('User', {
     id: {
         type: DataTypes.UUID,
