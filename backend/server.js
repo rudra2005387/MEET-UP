@@ -4,7 +4,7 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 const authRoutes = require("./routes/authRoutes");
 
-const { sequelize, connectDB } = require("./utils/db"); // ✅ Sequelize setup
+const { sequelize, initializeDatabase } = require("./utils/db");
 
 const app = express();
 const server = http.createServer(app);
@@ -77,21 +77,20 @@ io.on("connection", socket => {
   });
 });
 
-// --- Connect DB and start server ---
 const PORT = process.env.PORT || 5011;
 
 const startServer = async () => {
   try {
-    await connectDB(); // ✅ Test DB connection
-    await sequelize.sync(); // ✅ Sync models (tables)
+    // Initialize database before starting server
+    await initializeDatabase();
+    
     server.listen(PORT, () => {
-      console.log(`🚀 Server listening on port ${PORT}`);
+      console.log(`✅ Server running on port ${PORT}`);
     });
-  } catch (err) {
-    console.error("❌ Failed to start server:", err);
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 };
 
 startServer();
-
