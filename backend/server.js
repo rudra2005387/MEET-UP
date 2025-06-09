@@ -2,19 +2,26 @@ const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
-const authRoutes = require('./routes/authRoutes');
+const authRoutes = require("./routes/authRoutes");
+
+const { sequelize, connectDB } = require("./utils/db"); // ✅ Sequelize setup
 
 const app = express();
 const server = http.createServer(app);
 
 // --- CORS and JSON middleware ---
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002",    "https://your-frontend.onrender.com" ],
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "https://your-frontend.onrender.com"
+  ],
   credentials: true
 }));
 app.use(express.json());
 
-// --- Health check route for Render ---
+// --- Health check route ---
 app.get("/", (req, res) => {
   res.status(200).send("Server is healthy!");
 });
@@ -25,7 +32,11 @@ app.use("/api/auth", authRoutes);
 // --- Socket.IO setup ---
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:3002"
+    ],
     methods: ["GET", "POST"]
   }
 });
@@ -66,7 +77,21 @@ io.on("connection", socket => {
   });
 });
 
+// --- Connect DB and start server ---
 const PORT = process.env.PORT || 5011;
-server.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+
+const startServer = async () => {
+  try {
+    await connectDB(); // ✅ Test DB connection
+    await sequelize.sync(); // ✅ Sync models (tables)
+    server.listen(PORT, () => {
+      console.log(`🚀 Server listening on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ Failed to start server:", err);
+    process.exit(1);
+  }
+};
+
+startServer();
+
