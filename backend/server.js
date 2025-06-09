@@ -4,7 +4,7 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 const authRoutes = require("./routes/authRoutes");
 
-const { sequelize, initializeDatabase } = require("./utils/db");
+const sequelize = require("./utils/db"); // Import Sequelize instance
 
 const app = express();
 const server = http.createServer(app);
@@ -81,14 +81,22 @@ const PORT = process.env.PORT || 5011;
 
 const startServer = async () => {
   try {
-    // Initialize database before starting server
-    await initializeDatabase();
-    
+    // Authenticate the database connection
+    await sequelize.authenticate();
+    console.log("✅ Database connection established successfully");
+
+    // Sync models in development (optional)
+    if (process.env.NODE_ENV !== "production") {
+      await sequelize.sync({ alter: true });
+      console.log("✅ Database models synchronized");
+    }
+
+    // Start the server
     server.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    console.error("❌ Failed to start server:", error);
     process.exit(1);
   }
 };
