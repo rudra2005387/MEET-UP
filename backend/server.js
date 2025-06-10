@@ -4,7 +4,7 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 const authRoutes = require("./routes/authRoutes");
 
-const sequelize = require("./utils/db"); // Import Sequelize instance
+const sequelize = require("./utils/db");
 
 const app = express();
 const server = http.createServer(app);
@@ -41,9 +41,9 @@ const io = new Server(server, {
   }
 });
 
-const usersInRoom = {}; // { roomId: [{ id, username }] }
+const usersInRoom = {};
 
-io.on("connection", socket => {
+io.on("connection", (socket) => {
   socket.on("join-room", ({ roomId, username }) => {
     if (!usersInRoom[roomId]) usersInRoom[roomId] = [];
     usersInRoom[roomId].push({ id: socket.id, username });
@@ -51,19 +51,19 @@ io.on("connection", socket => {
     const otherUsers = usersInRoom[roomId].filter(u => u.id !== socket.id);
     socket.emit("all-users", otherUsers);
 
-    socket.on("sending-signal", payload => {
+    socket.on("sending-signal", (payload) => {
       io.to(payload.userToSignal).emit("user-joined", {
         signal: payload.signal,
         callerID: payload.callerID,
-        username,
+        username
       });
     });
 
-    socket.on("returning-signal", payload => {
+    socket.on("returning-signal", (payload) => {
       io.to(payload.callerID).emit("receiving-returned-signal", {
         signal: payload.signal,
         id: socket.id,
-        username,
+        username
       });
     });
 
@@ -77,23 +77,23 @@ io.on("connection", socket => {
   });
 });
 
+// Ensure use of Render's dynamic port
 const PORT = process.env.PORT || 5011;
 
 const startServer = async () => {
   try {
-    // Authenticate the database connection
+    console.log("⏳ Connecting to database...");
     await sequelize.authenticate();
-    console.log("✅ Database connection established successfully");
+    console.log("✅ Database connection established");
 
-    // Sync models in development (optional)
     if (process.env.NODE_ENV !== "production") {
       await sequelize.sync({ alter: true });
       console.log("✅ Database models synchronized");
     }
 
-    // Start the server
+    // Start listening ASAP to avoid Render timeout
     server.listen(PORT, () => {
-      console.log(`✅ Server running on port ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
     });
   } catch (error) {
     console.error("❌ Failed to start server:", error);
