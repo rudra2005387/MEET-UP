@@ -76,7 +76,7 @@ io.on("connection", socket => {
     });
   });
 });
-console.log(`Render assigned port: ${PORT}`);
+
 const PORT = process.env.PORT || 5011;
 
 const startServer = async () => {
